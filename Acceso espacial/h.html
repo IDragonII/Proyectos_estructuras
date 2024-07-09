@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis de Imagen</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+
+        #resultado {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>Análisis de Imagen</h2>
+    <form id="formulario">
+        <input type="file" id="inputImagen" accept="image/*" required>
+        <br><br>
+        <button type="button" onclick="analizarImagen()">Analizar Imagen</button>
+    </form>
+
+    <div id="resultado"></div>
+
+    <script>
+        function analizarImagen() {
+            const input = document.getElementById('inputImagen');
+            const resultadoDiv = document.getElementById('resultado');
+            const file = input.files[0];
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const img = new Image();
+                    img.onload = function () {
+                        // Crear un lienzo para dibujar la imagen y procesarla
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        ctx.drawImage(img, 0, 0);
+
+                        // Obtener los datos de la imagen procesada
+                        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                        const data = imageData.data;
+
+                        // Calcular los canales R, G, B
+                        let sumR = 0, sumG = 0, sumB = 0;
+                        for (let i = 0; i < data.length; i += 4) {
+                            sumR += data[i];
+                            sumG += data[i + 1];
+                            sumB += data[i + 2];
+                        }
+                        const promedioR = sumR / (data.length / 4);
+                        const promedioG = sumG / (data.length / 4);
+                        const promedioB = sumB / (data.length / 4);
+
+                        // Calcular la textura (entropía de Shannon)
+                        const grayData = new Uint8Array(data.length / 4);
+                        for (let i = 0, j = 0; i < data.length; i += 4, j++) {
+                            grayData[j] = (data[i] + data[i + 1] + data[i + 2]) / 3;
+                        }
+                        const entropy = shannonEntropy(grayData);
+
+                        // Mostrar resultados
+                        resultadoDiv.innerHTML = `
+                            <p>R: ${promedioR.toFixed(2)}</p>
+                            <p>G: ${promedioG.toFixed(2)}</p>
+                            <p>B: ${promedioB.toFixed(2)}</p>
+                            <p>Entropía de Shannon: ${entropy.toFixed(2)}</p>
+                        `;
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function shannonEntropy(data) {
+            const freq = Array.from(data.reduce((map, value) =>
+                map.set(value, (map.get(value) || 0) + 1), new Map()).values())
+                .map(count => count / data.length);
+            return -freq.reduce((sum, p) => sum + p * Math.log2(p), 0);
+        }
+    </script>
+</body>
+
+</html>

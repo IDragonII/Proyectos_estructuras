@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Song Similarity Search</title>
+    <link rel="stylesheet" href="musica.css">
+</head>
+
+<body>
+    <a href="index.html" class="button">Regresar</a>
+    <div class="container">
+        <h1>Song Similarity Search</h1>
+
+        <h2>Agregar nueva musica:</h2>
+        <form id="addImageForm">
+            <label for="songsName">Nombre:</label>
+            <input type="text" id="songsName" name="songsName">
+
+            <label for="songsFeatures">Características (separadas por comas):</label>
+            <input type="text" id="songsFeatures" name="songsFeatures">
+
+            <button type="button" onclick="addsongs()">Agregar cancion</button>
+        </form>
+        <form id="searchForm">
+            <label for="songName">Nombre de la canción:</label>
+            <input type="text" id="songName" name="songName" required autocomplete="off">
+            <div class="suggestions">
+                <ul id="suggestionsList">
+                    <!-- Suggestions will be dynamically added here -->
+                </ul>
+            </div>
+            <button type="submit">Buscar</button>
+        </form>
+
+        <h2>Results</h2>
+        <ul id="similarSongs">
+            <!-- Songs will be dynamically added here -->
+        </ul>
+    </div>
+
+    <script src="musica.js"></script>
+</body>
+
+</html>

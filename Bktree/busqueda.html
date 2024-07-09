@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Búsqueda de Secuencias de ADN con BK-tree y MySQL</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="container">
+    <h1>Búsqueda de Secuencias de ADN con BK-tree y MySQL</h1>
+    <div>
+        <label for="dna-sequence">Buscar secuencia de ADN:</label>
+        <input type="text" id="dna-sequence" oninput="displaySequence()" />
+    </div>
+    <div>
+        <label for="max-distance">Distancia máxima:</label>
+        <input type="number" id="max-distance" value="1" min="0" />
+        <button onclick="searchDNA()">Buscar</button>
+    </div>
+    <h2>Secuencia Buscada:</h2>
+    <div id="sequence-display"></div>
+    <h2>Personas con Secuencias Similares:</h2>
+    <ul id="results"></ul>
+    <script src="bktree.js"></script>
+</body>
+
+</html>

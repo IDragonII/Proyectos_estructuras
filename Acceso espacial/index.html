@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Búsqueda de Restaurantes en Puno con Leaflet</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <!-- Leaflet Routing Machine CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
+
+    <style>
+        #map {
+            height: 400px;
+            margin-top: 20px;
+        }
+
+        .search-container {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1 class="mt-4">Búsqueda de Restaurantes en Puno con Leaflet</h1>
+
+        <!-- Contenedor para el formulario de búsqueda en una fila horizontal -->
+        <div class="row search-container">
+            <div class="col-md-4">
+                <!-- Formulario de búsqueda -->
+                <form id="searchForm">
+                    <div class="form-group">
+                        <label for="locationInput">Buscar restaurantes cerca de:</label>
+                        <input type="text" id="locationInput" class="form-control"
+                            placeholder="Ingrese una dirección o lugar">
+                    </div>
+                </form>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label for="maxRestaurants">Número máximo de restaurantes:</label>
+                    <input type="number" id="maxRestaurants" class="form-control" value="5" min="1" step="1">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label for="maxDistance">Distancia máxima de búsqueda (metros):</label>
+                    <input type="number" id="maxDistance" class="form-control" value="1000" min="100" step="100">
+                </div>
+            </div>
+        </div>
+
+        <!-- Mapa -->
+        <div id="map"></div>
+    </div>
+
+    <!-- Leaflet JavaScript -->
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <!-- Leaflet Routing Machine JavaScript -->
+    <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+    <!-- Bootstrap JS (jQuery required for Bootstrap) -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <script>
+        // Define la clase Grid
+        class Grid {
+            constructor(size) {
+                this.size = size; // tamaño de cada celda de la cuadrícula
+                this.cells = new Map();
+            }
+
+            // Función de hash para convertir coordenadas en una clave de celda
+            getCellKey(latitude, longitude) {
+                const x = Math.floor(latitude / this.size);
+                const y = Math.floor(longitude / this.size);
+                return `${x},${y}`;
+            }
+
+            // Añadir un restaurante a la cuadrícula
+            addRestaurant(restaurant) {
+                const key = this.getCellKey(restaurant.latitude, restaurant.longitude);
+                if (!this.cells.has(key)) {
+                    this.cells.set(key, []);
+                }
+                this.cells.get(key).push(restaurant);
+            }
+
+            // Calcular distancia en metros entre dos puntos (Haversine formula)
+            calculateDistance(lat1, lon1, lat2, lon2) {
+                const R = 6371e3; // Radio de la Tierra en metros
+                const φ1 = lat1 * Math.PI / 180; // φ, λ en radianes
+                const φ2 = lat2 * Math.PI / 180;
+                const Δφ = (lat2 - lat1) * Math.PI / 180;
+                const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+                const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+                    Math.cos(φ1) * Math.cos(φ2) *
+                    Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+                const distance = R * c; // Distancia en metros
+                return distance;
+            }
+
+            // Buscar restaurantes en celdas vecinas dentro de una distancia máxima
+            getNearbyRestaurants(latitude, longitude, maxDistance, maxCount) {
+                const nearbyRestaurants = [];
+
+                this.cells.forEach((restaurants, key) => {
+                    const [x, y] = key.split(',').map(Number);
+                    const cellLat = x * this.size;
+                    const cellLng = y * this.size;
+
+                    restaurants.forEach(restaurant => {
+                        const distance = this.calculateDistance(latitude, longitude, restaurant.latitude, restaurant.longitude);
+                        if (distance <= maxDistance) {
+                            nearbyRestaurants.push({ ...restaurant, distance });
+                        }
+                    });
+                });
+
+                // Ordenar por distancia (opcional)
+                nearbyRestaurants.sort((a, b) => a.distance - b.distance);
+                // Limitar a maxCount restaurantes
+                return nearbyRestaurants.slice(0, maxCount);
+            }
+        }
+
+        // Crear una cuadrícula con tamaño de celda 0.01 (aproximadamente 1km x 1km)
+        const grid = new Grid(0.01);
+
+        // Ejemplo de datos de restaurantes en Puno, Perú
+        const restaurantsInPuno = [
+            { name: "Restaurante Amanecer Andino", latitude: -15.8400, longitude: -70.0219 },
+            { name: "Pizzería La Toscana", latitude: -15.8385, longitude: -70.0261 },
+            { name: "Cevichería El Puerto", latitude: -15.8403, longitude: -70.0207 },
+            { name: "Pollería Don Pollo", latitude: -15.8396, longitude: -70.0218 },
+            { name: "Restaurant Turístico Puno", latitude: -15.8410, longitude: -70.0242 },
+            { name: "Chifa El Sol", latitude: -15.8377, longitude: -70.0248 },
+            { name: "Sushi Bar Puno", latitude: -15.8381, longitude: -70.0221 },
+            { name: "El Rancho", latitude: -15.8368, longitude: -70.0195 },
+            { name: "La Choza de Oscar", latitude: -15.8392, longitude: -70.0270 },
+            { name: "Kankacho La Cabaña", latitude: -15.8420, longitude: -70.0255 },
+            { name: "Restaurante Mojsa", latitude: -15.8357, longitude: -70.0208 },
+            { name: "La Table del' Inca", latitude: -15.8375, longitude: -70.0225 },
+            { name: "Mercado Central de Puno", latitude: -15.8399, longitude: -70.0273 },
+            { name: "Café Bar de la Casa del Corregidor", latitude: -15.8395, longitude: -70.0203 },
+            { name: "Restaurante Balcón del Conde", latitude: -15.8386, longitude: -70.0251 },
+            { name: "Pachamama", latitude: -15.8369, longitude: -70.0240 },
+            { name: "Casona Plaza Hotel Puno", latitude: -15.8372, longitude: -70.0229 },
+            { name: "Restaurante Urus", latitude: -15.8390, longitude: -70.0210 },
+            { name: "Restaurante Los Uros", latitude: -15.8401, longitude: -70.0268 },
+            { name: "Mojsa Restaurant", latitude: -15.8411, longitude: -70.0206 },
+            { name: "Restaurant Pacha", latitude: -15.8350, longitude: -70.0250 },
+            { name: "Incabar", latitude: -15.8380, longitude: -70.0215 },
+            { name: "Deli Cias", latitude: -15.8363, longitude: -70.0220 },
+            { name: "Ricos Pan", latitude: -15.8407, longitude: -70.0231 },
+            { name: "Valeria Restaurant", latitude: -15.8398, longitude: -70.0198 },
+            { name: "El Tablón", latitude: -15.8361, longitude: -70.0245 },
+            { name: "Café Bar", latitude: -15.8355, longitude: -70.0209 },
+            { name: "Restaurante El Lago", latitude: -15.8742, longitude: -69.9210 },
+            { name: "Restaurante Andino", latitude: -15.7324, longitude: -70.1360 },
+            { name: "Restaurante Titikaka", latitude: -15.6754, longitude: -69.8812 },
+            { name: "Restaurante Mirador", latitude: -15.4998, longitude: -70.1339 },
+            { name: "Restaurante La Casona", latitude: -15.8476, longitude: -70.0321 },
+            { name: "Restaurante Kollasuyo", latitude: -15.6661, longitude: -69.9773 },
+            { name: "Restaurante Altiplano", latitude: -15.9182, longitude: -70.0874 },
+            { name: "Restaurante Cordillera", latitude: -15.6955, longitude: -70.0257 },
+            { name: "Restaurante Sillustani", latitude: -15.7178, longitude: -70.1355 },
+            { name: "Restaurante Chucuito", latitude: -15.8914, longitude: -69.9462 },
+            { name: "Restaurante Juliaca", latitude: -15.4992, longitude: -70.1333 },
+            { name: "Restaurante Moho", latitude: -15.4935, longitude: -69.5823 },
+            { name: "Restaurante Ayaviri", latitude: -14.8892, longitude: -70.5882 },
+            { name: "Restaurante Azángaro", latitude: -14.9133, longitude: -70.2075 },
+            { name: "Restaurante Sandia", latitude: -14.3324, longitude: -69.4582 },
+            { name: "Restaurante Putina", latitude: -14.9182, longitude: -69.8694 },
+            { name: "Restaurante Huancané", latitude: -15.2773, longitude: -69.6365 },
+            { name: "Restaurante Desaguadero", latitude: -16.5643, longitude: -69.0423 },
+            { name: "Restaurante Ilave", latitude: -16.0832, longitude: -69.6704 },
+            { name: "Restaurante Lampa", latitude: -15.3601, longitude: -70.3702 },
+            { name: "Restaurante Uros", latitude: -15.8267, longitude: -70.0441 },
+            { name: "Restaurante Chucuito", latitude: -15.8685, longitude: -69.9033 },
+            { name: "Restaurante Arapa", latitude: -15.2971, longitude: -69.9622 },
+            { name: "Restaurante Llachon", latitude: -15.6006, longitude: -69.7601 },
+            { name: "Restaurante Amantaní", latitude: -15.6381, longitude: -69.6905 },
+            { name: "Restaurante Taquile", latitude: -15.6839, longitude: -69.7020 },
+            { name: "Restaurante Cabanillas", latitude: -15.5656, longitude: -70.3500 },
+            { name: "Restaurante Yunguyo", latitude: -16.2431, longitude: -69.0942 },
+            { name: "Restaurante Pomata", latitude: -16.2532, longitude: -69.3443 },
+            { name: "Restaurante Laraqueri", latitude: -16.2990, longitude: -69.5688 },
+            { name: "Restaurante Ácora", latitude: -16.2076, longitude: -69.6333 },
+            { name: "Restaurante Taraco", latitude: -15.5091, longitude: -69.7982 },
+            { name: "Restaurante Coata", latitude: -15.5123, longitude: -69.7642 },
+            { name: "Restaurante Mañazo", latitude: -15.6064, longitude: -70.2292 },
+            { name: "Restaurante Pucará", latitude: -15.0154, longitude: -70.3661 },
+            { name: "Restaurante Palca", latitude: -15.3433, longitude: -70.1011 },
+            { name: "Restaurante Santa Rosa", latitude: -15.4983, longitude: -69.5851 },
+            { name: "Restaurante Patambuco", latitude: -14.9995, longitude: -69.7981 },
+            { name: "Restaurante Vilque", latitude: -15.8806, longitude: -70.0917 },
+            { name: "Restaurante Capachica", latitude: -15.6754, longitude: -69.8798 }
+        ];
+
+        // Añadir los restaurantes de Puno a la cuadrícula
+        restaurantsInPuno.forEach(restaurant => grid.addRestaurant(restaurant));
+
+        // Inicializar el mapa Leaflet centrado en Puno
+        const map = L.map('map').setView([-15.8403, -70.0218], 14);
+
+        // Agregar capa de mapa base (OpenStreetMap)
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // Icono personalizado rojo para los marcadores de destino
+        const redIcon = new L.Icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41]
+        });
+
+        // Icono personalizado azul para el marcador de ubicación del usuario
+        const userIcon = new L.Icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41]
+        });
+
+        // Inicializar Leaflet Routing Machine
+        const control = L.Routing.control({
+            waypoints: [],
+            routeWhileDragging: true,
+            router: new L.Routing.OSRMv1({
+                serviceUrl: 'https://router.project-osrm.org/route/v1',
+                profile: 'car' // Perfil de enrutamiento para automóvil
+            }),
+            createMarker: function (i, waypoint, n) {
+                if (i === 0) {
+                    // Marcador inicial (punto de partida)
+                    return L.marker(waypoint.latLng, { icon: redIcon });
+                } else {
+                    // Marcador final (punto de llegada)
+                    return L.marker(waypoint.latLng, { icon: userIcon });
+                }
+            }
+        }).addTo(map);
+
+        let marker;
+        // Manejar la selección de ubicación en el mapa
+        map.on('click', function (e) {
+            const latlng = e.latlng;
+
+            // Limpiar marcador anterior si existe
+            if (marker) {
+                map.removeLayer(marker);
+            }
+
+            // Crear marcador rojo en la ubicación seleccionada
+            marker = L.marker(latlng, { icon: redIcon }).addTo(map);
+
+            // Obtener el número máximo de restaurantes desde el input
+            const maxRestaurants = parseInt(document.getElementById('maxRestaurants').value);
+            // Obtener la distancia máxima de búsqueda en metros desde el input
+            const maxDistance = parseInt(document.getElementById('maxDistance').value);
+
+            // Buscar restaurantes cercanos a la ubicación seleccionada
+            findNearbyRestaurants(latlng.lat, latlng.lng, maxDistance, maxRestaurants);
+        });
+
+        // Función para encontrar y mostrar restaurantes cercanos a una ubicación dada
+        function findNearbyRestaurants(latitude, longitude, maxDistance, maxCount) {
+            const nearbyRestaurants = grid.getNearbyRestaurants(latitude, longitude, maxDistance, maxCount);
+
+            // Limpiar marcadores de restaurantes anteriores
+            clearRestaurantMarkers();
+
+            nearbyRestaurants.forEach((restaurant, index) => {
+                const restaurantMarker = L.marker([restaurant.latitude, restaurant.longitude])
+                    .bindPopup(`<b>${restaurant.name}</b><br>(${restaurant.latitude}, ${restaurant.longitude})<br>Distancia: ${restaurant.distance.toFixed(2)} metros`)
+                    .addTo(map)
+                    .openPopup();
+
+                restaurantMarkers.push(restaurantMarker); // Agregar marcador a la lista
+
+                // Establecer ruta hacia el restaurante más cercano
+                if (index === 0) {
+                    control.setWaypoints([
+                        L.latLng(latitude, longitude),
+                        L.latLng(restaurant.latitude, restaurant.longitude)
+                    ]);
+                }
+            });
+        }
+
+        // Arreglo para almacenar referencias a los marcadores de restaurantes
+        let restaurantMarkers = [];
+
+        // Función para limpiar todos los marcadores de restaurantes del mapa
+        function clearRestaurantMarkers() {
+            restaurantMarkers.forEach(marker => {
+                map.removeLayer(marker);
+            });
+            restaurantMarkers = [];
+        }
+    </script>
+</body>
+
+</html>

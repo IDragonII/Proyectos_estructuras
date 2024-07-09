@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Corrector Ortográfico</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 600px;
+            box-sizing: border-box;
+            /* Ensure padding and border are included in the element's total width and height */
+            display: flex;
+            justify-content: space-between;
+            /* Distribute items evenly along the main axis */
+            align-items: flex-start;
+            /* Align items to the top */
+        }
+
+        .inputs {
+            width: 45%;
+        }
+
+        .suggestions {
+            width: 45%;
+            padding-left: 20px;
+            /* Add some space to the left for separation */
+            box-sizing: border-box;
+            /* Ensure padding is included in the element's total width */
+        }
+
+        h1 {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 10px;
+            text-align: center;
+            width: 100%;
+            /* Ensure h1 takes full width */
+        }
+
+        p {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 20px;
+            text-align: center;
+            width: 100%;
+            /* Ensure p takes full width */
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+            /* Ensure padding and border are included in the element's total width and height */
+        }
+
+        .suggestion-item {
+            background-color: #e0e0e0;
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            color: #333;
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="inputs">
+            <h1>Corrector Ortográfico</h1>
+            <p>Introduce una oración:</p>
+            <input type="text" id="inputSentence" oninput="checkSpelling()">
+            <p>Oración corregida:</p>
+            <input type="text" id="correctedSentence" readonly>
+        </div>
+        <div class="suggestions" id="suggestions"></div>
+    </div>
+
+    <script>
+        const dictionary = [
+            "ejemplo", "muestra", "simple", "manzana", "examinar", "plantilla", "modelo", "casa",
+            "perro", "gato", "escuela", "niño", "niña", "familia", "amigo", "amiga", "trabajo",
+            "oficina", "coche", "libro", "computadora", "programación", "desarrollo", "tecnología"
+        ];
+
+        function levenshteinDistance(a, b) {
+            const matrix = [];
+            for (let i = 0; i <= b.length; i++) {
+                matrix[i] = [i];
+            }
+            for (let j = 0; j <= a.length; j++) {
+                matrix[0][j] = j;
+            }
+            for (let i = 1; i <= b.length; i++) {
+                for (let j = 1; j <= a.length; j++) {
+                    if (b.charAt(i - 1) === a.charAt(j - 1)) {
+                        matrix[i][j] = matrix[i - 1][j - 1];
+                    } else {
+                        matrix[i][j] = Math.min(matrix[i - 1][j - 1] + 1, Math.min(matrix[i][j - 1] + 1, matrix[i - 1][j] + 1));
+                    }
+                }
+            }
+            return matrix[b.length][a.length];
+        }
+
+        function checkSpelling() {
+            const inputSentence = document.getElementById("inputSentence").value.toLowerCase();
+            const suggestions = document.getElementById("suggestions");
+            const correctedSentenceInput = document.getElementById("correctedSentence");
+            const correctionsDiv = document.createElement("div");
+
+            suggestions.innerHTML = "";
+            correctionsDiv.innerHTML = "";
+
+            if (inputSentence === "") {
+                correctedSentenceInput.value = "";
+                return;
+            }
+
+            const words = inputSentence.split(" ");
+            const maxDistance = 2; // Define the maximum distance for suggestions
+            const allPossibleWords = [];
+
+            words.forEach(word => {
+                const possibleWords = dictionary.map(dictWord => ({
+                    word: dictWord,
+                    distance: levenshteinDistance(word, dictWord)
+                })).filter(item => item.distance <= maxDistance);
+                allPossibleWords.push(possibleWords);
+            });
+
+            const flatPossibleWords = allPossibleWords.flat();
+            const uniquePossibleWords = flatPossibleWords.filter((item, index, self) =>
+                index === self.findIndex(t => (
+                    t.word === item.word && t.distance === item.distance
+                ))
+            );
+
+            const correctedWords = words.map(word => {
+                const bestSuggestion = uniquePossibleWords.find(item => item.distance === levenshteinDistance(word, item.word));
+                return bestSuggestion ? bestSuggestion.word : word;
+            });
+
+            const correctedSentence = correctedWords.join(" ");
+            correctedSentenceInput.value = correctedSentence;
+
+            uniquePossibleWords.forEach(item => {
+                const suggestionItem = document.createElement("div");
+                suggestionItem.classList.add("suggestion-item");
+                suggestionItem.textContent = `${item.word} (distancia: ${item.distance})`;
+                correctionsDiv.appendChild(suggestionItem);
+            });
+
+            suggestions.appendChild(correctionsDiv);
+        }
+    </script>
+</body>
+
+</html> 

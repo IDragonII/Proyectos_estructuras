@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Búsqueda de Similitud de Imágenes con VPTree</title>
+    <link rel="stylesheet" href="imagen.css">
+</head>
+
+<body>
+    <a href="index.html" class="button">Regresar</a>
+    <div class="container">
+        <h1>Búsqueda de Similitud de Imágenes con VPTree</h1>
+        <h2>Agregar nueva imagen:</h2>
+        <form id="addImageForm">
+            <label for="imageName">Nombre:</label>
+            <input type="text" id="imageName" name="imageName">
+
+            <label for="imageFeatures">Características (separadas por comas):</label>
+            <input type="text" id="imageFeatures" name="imageFeatures">
+
+            <button type="button" onclick="addImage()">Agregar Imagen</button>
+        </form>
+        <div class="autocomplete-container">
+            <label for="queryName">Introduce el nombre de la imagen:</label>
+            <input type="text" id="queryName" oninput="showSuggestions()">
+            <div id="autocomplete-list" class="autocomplete-suggestions"></div>
+        </div>
+        <button onclick="searchSimilarImages()">Buscar</button>
+        <p>Imágenes similares a la consulta:</p>
+        <ul id="results"></ul>
+    </div>
+    <script src="imagen.js"></script>
+</body>
+
+</html>

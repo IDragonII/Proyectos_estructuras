@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Búsqueda de Imágenes Similares</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            width: 80%;
+            margin: auto;
+            padding: 20px;
+            text-align: center;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Búsqueda de Imágenes Similares</h1>
+        <input type="file" id="imageUpload" accept="image/*">
+        <button onclick="handleImageUpload()">Subir Imagen</button>
+        <br><br>
+        <label for="query">Punto de consulta (x, y): </label>
+        <input type="text" id="query" value="0.2,0.3">
+        <button onclick="searchImages()">Buscar</button>
+        <h2>Resultados</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Punto</th>
+                    <th>Distancia</th>
+                </tr>
+            </thead>
+            <tbody id="results">
+            </tbody>
+        </table>
+        <h2>Gráfico</h2>
+        <canvas id="myChart" width="400" height="400"></canvas>
+    </div>
+
+    <script>
+        class MultiVPTree {
+            constructor(points, numReferences = 2, leafSize = 10) {
+                this.numReferences = numReferences;
+                this.leafSize = leafSize;
+                this.root = this.buildTree(points);
+            }
+            buildTree(points) {
+                if (points.length <= this.leafSize) {
+                    return { points: points };
+                }
+                const references = [];
+                for (let i = 0; i < this.numReferences; i++) {
+                    const index = Math.floor(Math.random() * points.length);
+                    references.push(points[index]);
+                }
+                const distances = points.map(point => references.map(ref => this.distance(point, ref)));
+                const medianDistances = references.map((_, i) => this.median(distances.map(d => d[i])));
+                const leftPoints = points.filter((_, idx) => distances[idx].every((d, i) => d <= medianDistances[i]));
+                const rightPoints = points.filter((_, idx) => !leftPoints.includes(points[idx]));
+                return {
+                    references: references,
+                    medianDistances: medianDistances,
+                    left: this.buildTree(leftPoints),
+                    right: this.buildTree(rightPoints)
+                };
+            }
+            search(query, k = 1) {
+                return this._search(this.root, query, k);
+            }
+            _search(node, query, k) {
+                if (node.points) {
+                    const distances = node.points.map(point => this.distance(query, point));
+                    return node.points.map((point, idx) => [point, distances[idx]]).sort((a, b) => a[1] - b[1]).slice(0, k);
+                }
+                const queryDistances = node.references.map(ref => this.distance(query, ref));
+                const exploreLeft = queryDistances.every((d, i) => d <= node.medianDistances[i]);
+                const bestBranch = exploreLeft ? node.left : node.right;
+                const otherBranch = exploreLeft ? node.right : node.left;
+                let bestResults = this._search(bestBranch, query, k);
+                const bestDistances = bestResults.map(result => result[1]);
+                if (queryDistances.some((d, i) => d <= node.medianDistances[i] + Math.max(...bestDistances))) {
+                    const otherResults = this._search(otherBranch, query, k);
+                    bestResults = bestResults.concat(otherResults).sort((a, b) => a[1] - b[1]).slice(0, k);
+                }
+                return bestResults;
+            }
+            distance(a, b) {
+                return Math.sqrt(a.reduce((sum, ai, i) => sum + (ai - b[i]) ** 2, 0));
+            }
+            median(values) {
+                values.sort((a, b) => a - b);
+                const mid = Math.floor(values.length / 2);
+                return values.length % 2 === 0 ? (values[mid - 1] + values[mid]) / 2 : values[mid];
+            }
+        }
+
+        let points = [
+            [0.1, 0.2],
+            [0.3, 0.4],
+            [0.5, 0.6],
+            [0.7, 0.8],
+            [0.9, 1.0],
+            [1.1, 1.2]
+        ];
+        let tree = new MultiVPTree(points);
+        let chart = null;
+
+        function initializeChart() {
+            const ctx = document.getElementById('myChart').getContext('2d');
+            chart = new Chart(ctx, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: 'Puntos',
+                        data: points.map(point => ({ x: point[0], y: point[1] })),
+                        backgroundColor: 'blue'
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            position: 'bottom',
+                            title: {
+                                display: true,
+                                text: 'X'
+                            },
+                            min: 0,
+                            max: 1.5
+                        },
+                        y: {
+                            type: 'linear',
+                            title: {
+                                display: true,
+                                text: 'Y'
+                            },
+                            min: 0,
+                            max: 1.5
+                        }
+                    }
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            initializeChart();
+        });
+
+        function handleImageUpload() {
+            const input = document.getElementById('imageUpload');
+            if (!input.files || !input.files[0]) return;
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const img = new Image();
+                img.onload = function () {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.drawImage(img, 0, 0);
+                    const imageData = ctx.getImageData(0, 0, img.width, img.height);
+                    const imagePoints = extractImageData(imageData);
+                    points = points.concat(imagePoints); // Añadir puntos de la imagen a la lista de puntos
+                    tree = new MultiVPTree(points); // Reconstruir el árbol con los nuevos puntos
+                    updateChartWithImage(imagePoints); // Actualizar el gráfico con los nuevos puntos de la imagen
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+
+        function extractImageData(imageData) {
+            const imagePoints = [];
+            for (let i = 0; i < 10; i++) {
+                const x = Math.random();
+                const y = Math.random();
+                imagePoints.push([x, y]);
+            }
+            return imagePoints;
+        }
+
+        function updateChartWithImage(imagePoints) {
+            if (!chart) return;
+
+            chart.data.datasets.push({
+                label: 'Nueva Imagen',
+                data: imagePoints.map(point => ({ x: point[0], y: point[1] })),
+                backgroundColor: 'orange'
+            });
+            chart.update();
+        }
+
+        function searchImages() {
+            const queryInput = document.getElementById('query').value;
+            const query = queryInput.split(',').map(Number);
+            const results = tree.search(query, 3);
+            const resultsTable = document.getElementById('results');
+            resultsTable.innerHTML = '';
+            results.forEach(result => {
+                const row = `<tr><td>${result[0]}</td><td>${result[1]}</td></tr>`;
+                resultsTable.insertAdjacentHTML('beforeend', row);
+            });
+            updateChartWithResults(query, results);
+        }
+
+        function updateChartWithResults(query, results) {
+            if (!chart) return;
+
+            // Limpiar datasets previos de resultados si existen
+            chart.data.datasets = chart.data.datasets.filter(dataset => dataset.label !== 'Resultados');
+
+            // Dataset para el punto de consulta
+            const queryDataset = {
+                label: 'Consulta',
+                data: [{ x: query[0], y: query[1] }],
+                backgroundColor: 'red'
+            };
+
+            // Dataset para los puntos de resultados
+            const resultsDataset = {
+                label: 'Resultados',
+                data: results.map(result => ({ x: result[0][0], y: result[0][1] })),
+                backgroundColor: 'green'
+            };
+
+            // Añadir nuevos datasets de consulta y resultados al gráfico
+            chart.data.datasets.push(queryDataset);
+            chart.data.datasets.push(resultsDataset);
+            chart.update();
+        }
+    </script>
+</body>
+
+</html>

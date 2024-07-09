@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <title>Plano Cartesiano</title>
+    <link href="styles.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-7">
+                <!-- Controles del plano cartesiano -->
+                <div class="controls mb-3 d-flex align-items-center">
+                    <!-- Formulario para configurar los ejes -->
+                    <div class="form-group mr-2">
+                        <label for="xMin" class="mr-1">X Min:</label>
+                        <input type="number" class="form-control form-control-sm" id="xMin" value="-10">
+                    </div>
+                    <div class="form-group mr-2">
+                        <label for="xMax" class="mr-1">X Max:</label>
+                        <input type="number" class="form-control form-control-sm" id="xMax" value="10">
+                    </div>
+                    <div class="form-group mr-2">
+                        <label for="yMin" class="mr-1">Y Min:</label>
+                        <input type="number" class="form-control form-control-sm" id="yMin" value="-10">
+                    </div>
+                    <div class="form-group mr-2">
+                        <label for="yMax" class="mr-1">Y Max:</label>
+                        <input type="number" class="form-control form-control-sm" id="yMax" value="10">
+                    </div>
+                    <button id="updateButton" class="btn btn-primary btn-sm">Actualizar</button>
+                </div>
+                <!-- Contenedor del plano cartesiano -->
+                <div class="card-body d-flex justify-content-center align-items-center">
+                    <canvas id="planoCartesiano" width="500" height="500"></canvas>
+                </div>
+            </div>
+            <div class="col-md-5">
+                <!-- Controles para conectar puntos -->
+                <div class="d-flex">
+                    <div id="lineaContainer" class="mr-3 border p-3 bg-secondary">
+                        <h4>Conectar puntos</h4>
+                        <select id="punto1Select" class="form-control form-control-sm mb-2"></select>
+                        <select id="punto2Select" class="form-control form-control-sm mb-2"></select>
+                        <button id="dibujarLineaButton" class="btn btn-success btn-sm" onclick="dibujarLinea()">Dibujar
+                            Línea</button>
+
+                        <button id="clearButton" class="btn btn-secondary btn-sm ml-2">Limpiar</button>
+                    </div>
+                    <!-- Contenedor de las distancias -->
+                    <div id="distanciasContainer" class="border p-3 w-50 bg-secondary">
+                        <h4>Distancias</h4>
+                        <div id="distancias"></div>
+                    </div>
+                </div>
+                <!-- Reglas que deben seguir -->
+                <div class="mt-3">
+                    <h4>Reglas que deben seguir</h4>
+                    <div id="distanciasContainer" class="w-100 bg-secondary">
+                        <div class="card-body">
+                            <h5 class="card-title">La distancia de un punto a sí mismo</h5>
+                            <p class="card-text">La distancia de un punto a sí mismo será <span
+                                    class="font-weight-bold">0</span>. La distancia entre puntos distintos será distinta
+                                de <span class="font-weight-bold">0</span>.</p>
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title">Simetría de la distancia entre dos puntos</h5>
+                            <p class="card-text">En un espacio métrico la distancia entre dos puntos es simétrica. La
+                                distancia entre el punto x e y coincide con la distancia entre el punto y e x.</p>
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title">Desigualdad del triángulo</h5>
+                            <p class="card-text">Entre tres puntos se satisface la desigualdad del triángulo. La suma de
+                                dos de las distancias entre los vértices de un triángulo es mayor o igual que la
+                                distancia restante.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
