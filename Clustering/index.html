@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title> Perfil estudiantil</title>
+
+    <link rel="shortcut icon" href="template/assets/images/fav.jpg">
+    <link rel="stylesheet" href="bootstrap.min.css">
+    <link rel="stylesheet" href="template/assets/css/fontawsom-all.min.css">
+    <link rel="stylesheet" type="text/css" href="template/assets/css/style.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/hint/show-hint.min.css">
+    <link rel="stylesheet" href="style.css">
+    <script src="p5.js"></script>
+</head>
+
+<body>
+    <div class="container-fluid overcover">
+        <div class="container mt-5">
+            <div class="row justify-content-center">
+                <div class="col-md-6"> <!-- Contenedor de ejemplo -->
+                    <div class="content-container">
+                        <h1 class="text-center">Ejemplo de clustering</h1>
+                        <div class="row justify-content-center">
+                            <div class="col-md-auto">
+                                <label for="numPoints" class="form-label">Numero de puntos:</label>
+                                <input type="number" id="numPoints" class="form-control" value="100" min="10"
+                                    max="1000">
+                            </div>
+                            <div class="col-md-auto">
+                                <label for="numClusters" class="form-label">Numero de cluster:</label>
+                                <input type="number" id="numClusters" class="form-control" value="3" min="1" max="10">
+                            </div>
+                            <div class="col-md-auto">
+                                <label for="numIterations" class="form-label">Max interacciones:</label>
+                                <input type="number" id="numIterations" class="form-control" value="100" min="1"
+                                    max="1000">
+                            </div>
+                        </div>
+
+                        <div class="row justify-content-center">
+                            <div class="col-md-auto">
+                                <button id="start" class="btn btn-primary">Iniciar</button>
+                                <button id="pause" class="btn btn-secondary">Pausar</button>
+                                <button id="reset" class="btn btn-danger">Reiniciar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6"> <!-- Contenedor de WCSS con concepto -->
+                    <div class="content-container">
+                        <h5>WCSS: </h5>
+                        <p>Es la suma de las distancias al cuadrado de cada punto dentro de su cluster
+                            correspondiente al centroide de ese cluster.</p>
+                        <h5>BCSS: </h5>
+                        <p>Es la suma de las distancias al cuadrado entre los centroides de los clusters y el
+                            centroide global de todos los datos.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row justify-content-center">
+                <div class="canvas-container">
+                    <canvas id="canvas" width="800" height="600"></canvas>
+                </div>
+            </div>
+
+            <div class="row justify-content-center mt-3">
+                <div class="metrics d-flex justify-content-between align-items-center">
+                    <p class="m-0 mr-3"><strong>WCSS:</strong></p>
+                    <span id="wcss" class="m-0 mr-3">0</span>
+                    <div class="w-100"></div>
+                    <p class="m-0 mr-3"><strong>BCSS:</strong></p>
+                    <span id="bcss" class="m-0 mr-3">0</span>
+                </div>
+            </div>
+        </div>
+
+        <script src="clustering.js"></script>
+    </div>
+</body>
+
+
+</html>

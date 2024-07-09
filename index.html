@@ -1,14 +1,153 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Proyectos Interactivos</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+
+        header {
+            background-color: #333;
+            color: white;
+            padding: 10px 0;
+            text-align: center;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2em;
+        }
+
+        nav {
+            margin-top: 10px;
+        }
+
+        nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+        }
+
+        nav ul li {
+            margin: 0 15px;
+        }
+
+        nav ul li a {
+            color: white;
+            text-decoration: none;
+            font-size: 1.2em;
+        }
+
+        nav ul li a:hover {
+            text-decoration: underline;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            width: 80%;
+            max-width: 1200px;
+            margin: 20px auto;
+            text-align: center;
+        }
+
+        .project {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .project:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .project a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .project-title {
+            font-size: 1.2em;
+            margin: 0;
+            color: #333;
+        }
+    </style>
 </head>
 
 <body>
-    <h1>HOLA</h1>
+    <header>
+        <h1>Proyectos de estructuras de datos avanzada</h1>
+        <nav>
+            <ul>
+                <li><a href="#">Inicio</a></li>
+            </ul>
+        </nav>
+    </header>
+    <div class="container">
+        <div class="project">
+            <a href="Acceso espacial/index.html">
+                <h2 class="project-title">Acceso espacial</h2>
+            </a>
+        </div>
+        <div class="project">
+            <a href="Similares/index.html">
+                <h2 class="project-title">Imagenes similares</h2>
+            </a>
+        </div>
+        <div class="project">
+            <a href="Funciones continuas/index.html">
+                <h2 class="project-title">Funciones continuas</h2>
+            </a>
+        </div>
+        <div class="project">
+            <a href="Metricas/index.html">
+                <h2 class="project-title">Metricas</h2>
+            </a>
+        </div>
+        <div class="project">
+            <a href="Corrector ortografico/palabras.html">
+                <h2 class="project-title">Corrector ortografico</h2>
+            </a>
+        </div>
+        <div class="project">
+            <a href="Bktree/index.html">
+                <h2 class="project-title">Bktree</h2>
+            </a>
+        </div>
+        <div class="project">
+            <a href="Comprimir imagen/index.html">
+                <h2 class="project-title">Comprimir imagen</h2>
+            </a>
+        </div>
+        <div class="project">
+            <a href="Consulta de proximidad/index.html">
+                <h2 class="project-title">Consulta de proximidad</h2>
+            </a>
+        </div>
+        <div class="project">
+            <a href="Clustering/index.html">
+                <h2 class="project-title">Clustering</h2>
+            </a>
+        </div>
+        <div class="project">
+            <a href="Sugerencias/index.html">
+                <h2 class="project-title">Sugerencias</h2>
+            </a>
+        </div>
+    </div>
 </body>
 
 </html>

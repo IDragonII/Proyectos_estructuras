@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title> Perfil estudiantil</title>
+    <link rel="shortcut icon" href="template/assets/images/fav.jpg">
+    <link rel="stylesheet" href="bootstrap.min.css">
+    <link rel="stylesheet" href="template/assets/css/fontawsom-all.min.css">
+    <link rel="stylesheet" type="text/css" href="template/assets/css/style.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/hint/show-hint.min.css">
+    <link rel="stylesheet" href="style.css">
+    <script src="p5.js"></script>
+</head>
+
+<body>
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="num-points">Número de puntos aleatorios:</label>
+                    <div class="input-group">
+                        <input type="number" id="num-points" class="form-control" value="5" min="1">
+                        <div class="input-group-append">
+                            <button id="generate-points" class="btn btn-primary">Generar Puntos
+                                Aleatorios</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="col">
+                        <div class="form-group d-flex ">
+                            <label for="point-x" class="mr-2">X:</label>
+                            <input type="number" id="point-x" class="form-control" step="0.1">
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="form-group d-flex">
+                            <label for="point-y" class="mr-2">Y:</label>
+                            <input type="number" id="point-y" class="form-control" step="0.1">
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="form-group d-flex">
+                            <button id="add-point" class="btn btn-primary mr-2">Agregar</button>
+                            <button id="remove-point" class="btn btn-danger">Eliminar</button>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="row justify-content-center">
+                    <div id="sketch"></div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <h2>Punto de consulta:</h2>
+                <pre id="query-point">[Haga clic en el gráfico]</pre>
+                <h3>Vecino más cercano:</h3>
+                <pre id="nearest-neighbor"></pre>
+                <p id="nearest-distance"></p> <!-- Nuevo elemento para mostrar la distancia -->
+                <h3>3 vecinos más cercanos:</h3>
+                <pre id="k-nearest-neighbors"></pre>
+                <p id="k-nearest-distances"></p>
+                <!-- Nuevo elemento para mostrar las distancias de los vecinos más cercanos -->
+            </div>
+        </div>
+    </div>
+
+    <script src="consultas.js"></script>
+</body>
+
+
+</html>

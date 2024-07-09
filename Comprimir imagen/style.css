@@ -1,0 +1,10 @@
+canvas {
+  border: 1px solid black;
+}
+
+.CodeMirror {
+  height: 500px;
+  /* Ajustar la altura del editor */
+  border: 1px solid #ddd;
+  font-size: 14px;
+}
