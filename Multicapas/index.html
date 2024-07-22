@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Mapa de Nueva York con Capas Avanzadas</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <style>
+        .custom-icon {
+            width: 24px;
+            height: 24px;
+            background-color: #FF5722;
+            border-radius: 50%;
+            border: 2px solid #FFFFFF;
+        }
+
+        .custom-icon-parks {
+            width: 24px;
+            height: 24px;
+            background-color: #4CAF50;
+            border-radius: 50%;
+            border: 2px solid #FFFFFF;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="map" style="width: 100%; height: 600px;"></div>
+    <script>
+        // Crear el mapa base centrado en Nueva York
+        var map = L.map('map').setView([40.7128, -74.0060], 12);
+
+        // Añadir capa de mosaico del mapa
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // Inicializar las capas
+        var subwayLayer;
+        var parksLayer;
+
+        // Cargar capa de estaciones de metro
+        fetch('https://data.cityofnewyork.us/resource/h9gi-nx95.geojson')
+            .then(response => response.json())
+            .then(data => {
+                subwayLayer = L.geoJson(data, {
+                    pointToLayer: function (feature, latlng) {
+                        // Asegúrate de que la propiedad de nombre existe en tus datos
+                        const name = feature.properties.name || 'Sin nombre';
+                        return L.circleMarker(latlng, {
+                            radius: 8,
+                            fillColor: "#FF5722",
+                            color: "#FFFFFF",
+                            weight: 2,
+                            opacity: 1,
+                            fillOpacity: 0.8
+                        }).bindPopup('<strong>Estación:</strong> ' + name);
+                    }
+                });
+                // Añadir control de capas después de que las capas estén listas
+                addLayerControl();
+            })
+            .catch(error => console.error('Error loading subway data:', error));
+
+        // Cargar capa de parques
+        fetch('https://data.cityofnewyork.us/resource/p7jc-c8ak.geojson')
+            .then(response => response.json())
+            .then(data => {
+                parksLayer = L.geoJson(data, {
+                    pointToLayer: function (feature, latlng) {
+                        // Asegúrate de que la propiedad de nombre existe en tus datos
+                        const name = feature.properties.name || 'Sin nombre';
+                        return L.circleMarker(latlng, {
+                            radius: 8,
+                            fillColor: "#4CAF50",
+                            color: "#FFFFFF",
+                            weight: 2,
+                            opacity: 1,
+                            fillOpacity: 0.8
+                        }).bindPopup('<strong>Parque:</strong> ' + name);
+                    }
+                });
+                // Añadir control de capas después de que las capas estén listas
+                addLayerControl();
+            })
+            .catch(error => console.error('Error loading parks data:', error));
+
+        // Función para añadir el control de capas
+        function addLayerControl() {
+            if (subwayLayer && parksLayer) {
+                L.control.layers(null, {
+                    'Estaciones de Metro': subwayLayer,
+                    'Parques': parksLayer
+                }).addTo(map);
+            }
+        }
+    </script>
+</body>
+
+</html>
