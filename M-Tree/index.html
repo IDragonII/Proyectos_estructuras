@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MTree Visualization</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        #map {
+            width: 100%;
+            height: 500px;
+        }
+
+        #controls {
+            margin: 10px;
+        }
+
+        #controls label,
+        #controls input,
+        #controls button {
+            margin-right: 10px;
+        }
+    </style>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+</head>
+
+<body>
+    <h1>MTree Visualization</h1>
+    <div id="controls">
+        <label for="radius">Search Radius:</label>
+        <input type="number" id="radius" step="0.01" value="0.05">
+        <button onclick="searchPOIs()">Search POIs</button>
+    </div>
+    <div id="map"></div>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        class MTreeNode {
+            constructor(parent = null) {
+                this.parent = parent;
+                this.children = [];
+                this.entries = [];
+                this.centroid = null;
+                this.coverageRadius = 0;
+            }
+        }
+
+        class MTree {
+            constructor(maxNodeSize = 4) {
+                this.root = new MTreeNode();
+                this.maxNodeSize = maxNodeSize;
+            }
+
+            _euclideanDistance(point1, point2) {
+                if (!point1 || !point2 || point1.length !== point2.length) {
+                    console.error('Invalid points for distance calculation:', point1, point2);
+                    throw new Error('Invalid points for distance calculation');
+                }
+                let sum = 0;
+                for (let i = 0; i < point1.length; i++) {
+                    sum += Math.pow(point1[i] - point2[i], 2);
+                }
+                return Math.sqrt(sum);
+            }
+
+            _calculateCentroid(entries) {
+                if (entries.length === 0) return [];
+                let centroid = entries[0].coords.map(() => 0);
+                for (let entry of entries) {
+                    for (let i = 0; i < entry.coords.length; i++) {
+                        centroid[i] += entry.coords[i];
+                    }
+                }
+                for (let i = 0; i < centroid.length; i++) {
+                    centroid[i] /= entries.length;
+                }
+                return centroid;
+            }
+
+            add(dataPoint) {
+                if (!dataPoint || !dataPoint.coords) {
+                    console.error('Invalid data point:', dataPoint);
+                    return;
+                }
+                let node = this.root;
+                while (node.children.length > 0) {
+                    node = this._chooseSubtree(node, dataPoint.coords);
+                }
+                node.entries.push(dataPoint);
+                if (node.entries.length > this.maxNodeSize) {
+                    this._splitNode(node);
+                } else {
+                    node.centroid = this._calculateCentroid(node.entries);
+                }
+            }
+
+            _chooseSubtree(node, dataPoint) {
+                let minDistance = Infinity;
+                let chosenSubtree = null;
+                for (let child of node.children) {
+                    if (child.centroid) {
+                        let distance = this._euclideanDistance(child.centroid, dataPoint);
+                        if (distance < minDistance) {
+                            minDistance = distance;
+                            chosenSubtree = child;
+                        }
+                    }
+                }
+                return chosenSubtree;
+            }
+
+            _splitNode(node) {
+                let midpoint = Math.floor(node.entries.length / 2);
+                let leftNode = new MTreeNode(node.parent);
+                let rightNode = new MTreeNode(node.parent);
+                node.entries.sort((a, b) => a.coords[0] - b.coords[0]);
+                leftNode.entries = node.entries.slice(0, midpoint);
+                rightNode.entries = node.entries.slice(midpoint);
+                leftNode.centroid = this._calculateCentroid(leftNode.entries);
+                rightNode.centroid = this._calculateCentroid(rightNode.entries);
+                node.children.push(leftNode, rightNode);
+                node.entries = [];
+                node.centroid = null;
+            }
+
+            search(queryPoint, range) {
+                if (!queryPoint) return [];
+                let results = [];
+                this._searchRecursive(this.root, queryPoint, range, results);
+                return results;
+            }
+
+            _searchRecursive(node, queryPoint, range, results) {
+                if (!queryPoint) return;
+                for (let entry of node.entries) {
+                    if (this._euclideanDistance(entry.coords, queryPoint) <= range) {
+                        results.push(entry);
+                    }
+                }
+                for (let child of node.children) {
+                    if (child.centroid && this._euclideanDistance(child.centroid, queryPoint) - (child.coverageRadius || 0) <= range) {
+                        this._searchRecursive(child, queryPoint, range, results);
+                    }
+                }
+            }
+        }
+
+        // Define global variables for map and MTree instance
+        const pointsOfInterest = [
+            { name: "Restaurant A", coords: [40.7128, -74.0060] },
+            { name: "Park B", coords: [40.7158, -74.0020] },
+            { name: "Store C", coords: [40.7120, -74.0100] },
+            { name: "Museum D", coords: [40.7200, -74.0000] },
+            { name: "Restaurant E", coords: [40.7250, -74.0050] },
+        ];
+
+        const userLocation = [40.7130, -74.0070];
+        const map = L.map('map').setView(userLocation, 15);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 18,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // Define the default icon to avoid 404 errors
+        const defaultIcon = L.icon({
+            iconUrl: 'https://unpkg.com/leaflet/dist/images/marker-icon.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowUrl: 'https://unpkg.com/leaflet/dist/images/marker-shadow.png',
+            shadowSize: [41, 41]
+        });
+
+        let mtree = new MTree(2);
+        pointsOfInterest.forEach(poi => mtree.add(poi));
+
+        function searchPOIs() {
+            const radius = parseFloat(document.getElementById('radius').value);
+            if (isNaN(radius) || radius <= 0) {
+                alert('Invalid radius value');
+                return;
+            }
+            console.log('Searching for POIs within radius:', radius); // Debugging log
+            const nearbyPOIs = mtree.search(userLocation, radius);
+
+            // Clear previous markers
+            map.eachLayer(layer => {
+                if (layer instanceof L.Marker) {
+                    map.removeLayer(layer);
+                }
+            });
+
+            // Add user location marker
+            L.marker(userLocation, { icon: defaultIcon }).addTo(map).bindPopup('User Location').openPopup();
+
+            // Add POIs markers
+            nearbyPOIs.forEach(poi => {
+                L.marker(poi.coords, { icon: defaultIcon })
+                    .addTo(map)
+                    .bindPopup(poi.name);
+            });
+
+            console.log("Puntos de interés cercanos:", nearbyPOIs);
+        }
+
+        searchPOIs(); // Initial search
+    </script>
+</body>
+
+</html>
