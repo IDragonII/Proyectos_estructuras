@@ -5,296 +5,70 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Visualización de Ball Tree con Búsqueda y Eliminación</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        form {
-            margin-bottom: 20px;
-        }
-
-        #network,
-        #decomposition {
-            border: 1px solid #ccc;
-            width: 800px;
-            height: 600px;
-            margin-top: 20px;
-            position: relative;
-        }
-
-        .ball {
-            position: absolute;
-            border-radius: 50%;
-            border: 2px solid red;
-            text-align: center;
-            line-height: 1;
-            font-size: 12px;
-            background: rgba(255, 255, 255, 0.5);
-        }
-    </style>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Vis.js CSS -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
-    <h1>Visualización de Ball Tree con Búsqueda y Eliminación</h1>
-    <form id="dataForm">
-        <label for="dataInput">Ingrese dato:</label>
-        <input type="text" id="dataInput" required>
-        <button type="submit">Agregar Dato</button>
-    </form>
-    <form id="deleteForm">
-        <label for="deleteInput">Eliminar dato:</label>
-        <input type="text" id="deleteInput" required>
-        <button type="submit">Eliminar Dato</button>
-    </form>
-    <form id="searchForm">
-        <label for="searchInput">Buscar dato:</label>
-        <input type="text" id="searchInput" required>
-        <button type="submit">Buscar Dato</button>
-    </form>
-    <div id="network"></div>
-    <h2>Descomposición del Ball Tree</h2>
-    <div id="decomposition"></div>
+    <header class="header">
+        <div class="container">
+            <h1>Visualización de Ball Tree</h1>
+            <p>Gestione y visualice datos en un Ball Tree con opciones de búsqueda y eliminación</p>
+        </div>
+    </header>
 
+    <div class="container">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="form-container">
+                    <h2>Administrar Datos</h2>
+                    <form id="dataForm" class="mb-3">
+                        <div class="mb-3">
+                            <label for="dataInput" class="form-label">Ingrese dato:</label>
+                            <input type="text" id="dataInput" class="form-control" required>
+                        </div>
+                        <button type="submit" class="btn btn-custom">Agregar Dato</button>
+                    </form>
+                    <form id="deleteForm" class="mb-3">
+                        <div class="mb-3">
+                            <label for="deleteInput" class="form-label">Eliminar dato:</label>
+                            <input type="text" id="deleteInput" class="form-control" required>
+                        </div>
+                        <button type="submit" class="btn btn-danger-custom">Eliminar Dato</button>
+                    </form>
+                    <form id="searchForm">
+                        <div class="mb-3">
+                            <label for="searchInput" class="form-label">Buscar dato:</label>
+                            <input type="text" id="searchInput" class="form-control" required>
+                        </div>
+                        <button type="submit" class="btn btn-info-custom">Buscar Dato</button>
+                    </form>
+                </div>
+            </div>
+            <div class="col-md-8">
+                <div class="graph-container">
+                    <div id="network" class="card text-center">
+                        <h2>Gráfica del Ball Tree</h2>
+                    </div>
+                    <div id="decomposition" class="card text-center">
+                        <h2>Descomposición del Ball Tree</h2>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.3.0/js/bootstrap.min.js"></script>
+    <!-- Vis.js JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
-    <script>
-        class BallTreeNode {
-            constructor(point, id, parentId) {
-                this.point = point;
-                this.id = id;
-                this.parentId = parentId;
-                this.left = null;
-                this.right = null;
-                this.radius = 0;
-            }
-        }
-
-        class BallTree {
-            constructor() {
-                this.root = null;
-                this.idCounter = 0;
-            }
-
-            insert(point) {
-                this.root = this._insert(this.root, point, null);
-                this.generateTree();
-                this.generateDecomposition();
-            }
-
-            _insert(node, point, parentId) {
-                if (node === null) {
-                    return new BallTreeNode(point, this.idCounter++, parentId);
-                }
-
-                if (point < node.point) {
-                    node.left = this._insert(node.left, point, node.id);
-                } else {
-                    node.right = this._insert(node.right, point, node.id);
-                }
-
-                this._updateRadius(node);
-                return node;
-            }
-
-            _updateRadius(node) {
-                if (node === null) return 0;
-                const leftRadius = node.left ? this._distance(node.point, node.left.point) : 0;
-                const rightRadius = node.right ? this._distance(node.point, node.right.point) : 0;
-                node.radius = Math.max(leftRadius, rightRadius);
-                return node.radius;
-            }
-
-            _distance(a, b) {
-                return Math.abs(a - b);
-            }
-
-            search(point) {
-                const result = this._search(this.root, point, []);
-                if (result !== null) {
-                    this.generateTree(result.path);
-                }
-                return result;
-            }
-
-            _search(node, point, path) {
-                if (node === null) {
-                    return null;
-                }
-
-                path.push(node.id);
-                if (node.point === point) {
-                    return { node, path };
-                }
-
-                if (point < node.point) {
-                    return this._search(node.left, point, path);
-                } else {
-                    return this._search(node.right, point, path);
-                }
-            }
-
-            delete(point) {
-                const result = this._delete(this.root, point);
-                if (result !== null) {
-                    this.root = result;
-                    this.generateTree();
-                    this.generateDecomposition();
-                }
-            }
-
-            _delete(node, point) {
-                if (node === null) {
-                    return null;
-                }
-
-                if (point < node.point) {
-                    node.left = this._delete(node.left, point);
-                } else if (point > node.point) {
-                    node.right = this._delete(node.right, point);
-                } else {
-                    if (node.left === null && node.right === null) {
-                        return null;
-                    } else if (node.left === null) {
-                        return node.right;
-                    } else if (node.right === null) {
-                        return node.left;
-                    } else {
-                        const minNode = this._findMin(node.right);
-                        node.point = minNode.point;
-                        node.right = this._delete(node.right, minNode.point);
-                    }
-                }
-
-                this._updateRadius(node);
-                return node;
-            }
-
-            _findMin(node) {
-                let current = node;
-                while (current.left !== null) {
-                    current = current.left;
-                }
-                return current;
-            }
-
-            preOrderTraversal(callback) {
-                this._preOrderTraversal(this.root, null, callback);
-            }
-
-            _preOrderTraversal(node, parent, callback) {
-                if (node !== null) {
-                    callback(node, parent);
-                    this._preOrderTraversal(node.left, node, callback);
-                    this._preOrderTraversal(node.right, node, callback);
-                }
-            }
-
-            generateTree(highlightPath = []) {
-                const nodes = new vis.DataSet([]);
-                const edges = new vis.DataSet([]);
-                const container = document.getElementById('network');
-
-                this.preOrderTraversal((node, parent) => {
-                    const color = highlightPath.includes(node.id) ? '#ffcc00' : undefined;
-                    nodes.add({ id: node.id, label: String(node.point), color });
-                    if (parent !== null) {
-                        edges.add({ from: parent.id, to: node.id });
-                    }
-                });
-
-                const data = { nodes: nodes, edges: edges };
-                const options = {
-                    layout: {
-                        hierarchical: {
-                            direction: 'UD',
-                            sortMethod: 'directed'
-                        }
-                    },
-                    edges: {
-                        smooth: true
-                    },
-                    physics: {
-                        enabled: false
-                    }
-                };
-
-                const network = new vis.Network(container, data, options);
-            }
-
-            generateDecomposition() {
-                const container = document.getElementById('decomposition');
-                container.innerHTML = '';
-
-                const drawBall = (node, centerX, centerY, scale) => {
-                    if (!node) return;
-
-                    const ball = document.createElement('div');
-                    ball.className = 'ball';
-                    ball.style.width = `${node.radius * 2 * scale}px`;
-                    ball.style.height = `${node.radius * 2 * scale}px`;
-                    ball.style.left = `${centerX - node.radius * scale}px`;
-                    ball.style.top = `${centerY - node.radius * scale}px`;
-                    ball.innerText = node.point;
-
-                    container.appendChild(ball);
-
-                    const childScale = scale * 0.75;
-                    const offsetY = centerY + node.radius * scale * 1.5;
-
-                    if (node.left) {
-                        const leftOffsetX = centerX - node.radius * scale * 0.75;
-                        drawBall(node.left, leftOffsetX, offsetY, childScale);
-                    }
-
-                    if (node.right) {
-                        const rightOffsetX = centerX + node.radius * scale * 0.75;
-                        drawBall(node.right, rightOffsetX, offsetY, childScale);
-                    }
-                };
-
-                drawBall(this.root, 400, 100, 10);
-            }
-        }
-
-        const form = document.getElementById('dataForm');
-        const deleteForm = document.getElementById('deleteForm');
-        const searchForm = document.getElementById('searchForm');
-        const dataInput = document.getElementById('dataInput');
-        const deleteInput = document.getElementById('deleteInput');
-        const searchInput = document.getElementById('searchInput');
-        const tree = new BallTree();
-
-        form.addEventListener('submit', function (event) {
-            event.preventDefault();
-            const value = Number(dataInput.value);
-            if (!isNaN(value)) {
-                tree.insert(value);
-            }
-            dataInput.value = '';
-        });
-
-        deleteForm.addEventListener('submit', function (event) {
-            event.preventDefault();
-            const value = Number(deleteInput.value);
-            if (!isNaN(value)) {
-                tree.delete(value);
-            }
-            deleteInput.value = '';
-        });
-
-        searchForm.addEventListener('submit', function (event) {
-            event.preventDefault();
-            const value = Number(searchInput.value);
-            if (!isNaN(value)) {
-                tree.search(value);
-            }
-            searchInput.value = '';
-        });
-    </script>
+    <script src="script.js"></script>
 </body>
 
 </html>

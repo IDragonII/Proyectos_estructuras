@@ -1,19 +1,113 @@
-body {
-  font-family: Arial, sans-serif;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-direction: column;
-  height: 100vh;
-  margin: 0;
-}
+<style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+        }
 
-#controls {
-  margin-bottom: 20px;
-}
+        .header {
+            background-color: #343a40;
+            color: white;
+            padding: 20px 0;
+            text-align: center;
+        }
 
-#tree {
-  width: 100%;
-  height: 80vh;
-  border: 1px solid #ccc;
-}
+        .header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+        }
+
+        .container {
+            margin-top: 30px;
+        }
+
+        .form-container {
+            padding: 20px;
+            border: 1px solid #ced4da;
+            border-radius: .375rem;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-container h2 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+        }
+
+        #network,
+        #decomposition {
+            border: 1px solid #ced4da;
+            background-color: white;
+            height: 600px;
+            margin-top: 20px;
+            border-radius: .375rem;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .ball {
+            position: absolute;
+            border-radius: 50%;
+            border: 2px solid #dc3545;
+            text-align: center;
+            line-height: 1;
+            font-size: 12px;
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        .btn-custom {
+            background-color: #007bff;
+            color: white;
+            border: none;
+        }
+
+        .btn-custom:hover {
+            background-color: #0056b3;
+        }
+
+        .btn-danger-custom {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+        }
+
+        .btn-danger-custom:hover {
+            background-color: #c82333;
+        }
+
+        .btn-info-custom {
+            background-color: #17a2b8;
+            color: white;
+            border: none;
+        }
+
+        .btn-info-custom:hover {
+            background-color: #138496;
+        }
+
+        .card {
+            border: none;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: .375rem;
+        }
+
+        .graph-container {
+            display: flex;
+            gap: 20px;
+        }
+
+        .graph-container .card {
+            flex: 1;
+        }
+
+        #network {
+            z-index: 1;
+        }
+
+        #decomposition {
+            position: relative;
+        }
+    </style>
